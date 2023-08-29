@@ -1,0 +1,3 @@
+packages:
+  - "io/ioutil"
+  - "golang.org/x/exp/slices"
