@@ -53,16 +53,27 @@ func run(pass *analysis.Pass) (any, error) {
 		(*ast.File)(nil),
 	}
 
+	allowedImportedPackages := map[string]struct{}{}
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		f, _ := n.(*ast.File)
+
 		if len(f.Imports) == 0 {
 			return
 		}
 
 		for _, imspec := range f.Imports {
-			if slices.Contains(cfg.PackageNames, strings.Trim(imspec.Path.Value, "\"")) {
-				pass.Reportf(imspec.Pos(), "%s is not allowed to be imported", imspec.Path.Value)
+			pkgName := strings.Trim(imspec.Path.Value, "\"")
+
+			if _, ok := allowedImportedPackages[pkgName]; ok {
+				continue
 			}
+
+			if slices.Contains(cfg.PackageNames, pkgName) {
+				pass.Reportf(imspec.Pos(), "%s is not allowed to be imported", imspec.Path.Value)
+				continue
+			}
+
+			allowedImportedPackages[pkgName] = struct{}{}
 		}
 	})
 
